@@ -143,16 +143,18 @@ def get_comp_op(op_str):
         raise ValueError("Invalid comparison operator: %s" % op_str)
 
 
-def make_age_rule(comp, delta, stat_field='st_mtime', now=None, 
-                 follow_symlinks=False):
+def make_age_rule(comp, delta, stat_field='mtime', now=None, follow_symlinks=False):
     '''Make a rule to match based on age of time stamps'''
     comp_op = get_comp_op(comp)
+    stat_attr = 'st_' + stat_field
     def rule(path, dir_entry):
         st = dir_entry.stat(follow_symlinks=follow_symlinks)
-        file_dt = datetime.fromtimestamp(st.st_mtime)
-        if now is None:
-            now = datetime.now()
-        return comp_op(now - file_dt, delta)
+        file_dt = datetime.fromtimestamp(getattr(st, stat_attr))
+        if now is not None:
+            ref = now
+        else:
+            ref = datetime.now()
+        return comp_op(ref - file_dt, delta)
     return rule
 
 
